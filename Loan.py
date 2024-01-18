@@ -1,4 +1,3 @@
-from typing import Self
 import math
 
 
@@ -76,7 +75,7 @@ class Loan:
             return stay_pay
         return diff_payment
 
-    def calculate_payment_ceil(self):
+    def calculate_payment_ceil(self) -> list:
         payment: list = []
 
         if self.loan_type[0] == "A":
@@ -92,7 +91,7 @@ class Loan:
                 payment.append(ceil_diff)
             return payment
 
-    def calculate_payment_pure(self):
+    def calculate_payment_pure(self) -> list:
         payment: list = []
         # accuracy of 2 decimal places
         if self.loan_type[0] == "A":
@@ -100,6 +99,6 @@ class Loan:
             return payment
 
         else:
-            for month_now in range(1, self.month+1):
+            for month_now in range(1, self.month + 1):
                 payment.append(round(self.payment_differentiated_pure(month_now), 2))
             return payment
