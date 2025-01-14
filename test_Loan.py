@@ -13,17 +13,45 @@ class TestLoan(TestCase):
         ]
 
     def test_calculate_payment_pure(self):
-        result = self.loan.calculate_payment_pure()
-        self.assertEqual(result, self.test_param[self.i][1])
+        for params in self.test_params:
+            amount, percent, months, loan_type, expected_pure, _, _, _ = params
+            loan = Loan(amount, percent, months, loan_type)
+            result = loan.calculate_payment_pure()
+            self.assertEqual(result, expected_pure, f"Failed on pure payment calculation for {loan_type}")
 
     def test_calculate_payment_ceil(self):
-        result = self.loan.calculate_payment_ceil()
-        self.assertEqual(result, self.test_param[self.i][2])
+        for params in self.test_params:
+            amount, percent, months, loan_type, _, expected_ceil, _, _ = params
+            loan = Loan(amount, percent, months, loan_type)
+            result = loan.calculate_payment_ceil()
+            self.assertEqual(result, expected_ceil, f"Failed on ceil payment calculation for {loan_type}")
 
     def test_overpayment_pure(self):
-        result = self.loan.overpayment(self.loan.calculate_payment_pure())
-        self.assertEqual(result, self.test_param[self.i][3])
+        for params in self.test_params:
+            amount, percent, months, loan_type, expected_pure, _, expected_overpayment, _ = params
+            loan = Loan(amount, percent, months, loan_type)
+            result = loan.overpayment(expected_pure)
+            self.assertAlmostEqual(
+                result, expected_overpayment, places=2, msg=f"Failed on pure overpayment calculation for {loan_type}"
+            )
 
     def test_overpayment_ceil(self):
-        result = self.loan.overpayment(self.loan.calculate_payment_ceil())
-        self.assertEqual(result, self.test_param[self.i][4])
+        for params in self.test_params:
+            amount, percent, months, loan_type, _, expected_ceil, _, expected_overpayment = params
+            loan = Loan(amount, percent, months, loan_type)
+            result = loan.overpayment(expected_ceil)
+            self.assertAlmostEqual(
+                result, expected_overpayment, places=2, msg=f"Failed on ceil overpayment calculation for {loan_type}"
+            )
+
+    def test_additional_methods(self):
+        loan = Loan(10000, 10, 12, "Annuity")
+        annuity_payment = loan.payment_annuity_pure()
+
+        # Test loan principal calculation
+        principal = loan.loan_principal_annuity(annuity_payment)
+        self.assertAlmostEqual(principal, 10000, places=2, msg="Failed on loan principal calculation")
+
+        # Test number of payments calculation
+        num_payments = loan.number_payments_annuity(annuity_payment)
+        self.assertEqual(num_payments, 12, "Failed on number of payments calculation")

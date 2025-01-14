@@ -11,6 +11,7 @@ class Loan:
         month (int): The loan term in months.
         loan_type (str): The type of loan ("Annuity" or "Differentiated").
     """
+
     def __init__(self, amount: int = 0, percent: float = 0.0, month: int = 0, loan_type: str = "Annuity") -> None:
         self.amount: int = amount
         self.annual_percent_rate: float = percent
@@ -29,34 +30,60 @@ class Loan:
         """Set the type of loan."""
         self.loan_type = loan_type
 
-    def set_loan(self, loan_type):
-        self.loan_type = loan_type
+    def overpayment(self, payments: list) -> float:
+        """
+        Calculate the overpayment made for the loan.
 
-    def overpayment(self, pay: list) -> int:
-        return round(sum(pay) - self.amount, 2)
+        Args:
+            payments (list): A list of monthly payments.
 
-    def last_month_payment_annuity(self, month_payment) -> int:
-        return self.amount - (self.month - 1) * month_payment
+        Returns:
+            float: The total overpayment.
+        """
+        return round(sum(payments) - self.amount, 2)
 
     def number_payments_annuity(self, month_payment) -> int:
+        """
+        Calculate the number of monthly annuity payments.
+        :param month_payment: your payment for 1 month
+        :return: number months for this payment
+        """
         n = math.log(
-            month_payment / (month_payment - self.monthly_interest_rate * self.amount),
-            1 + self.monthly_interest_rate)
+            month_payment / (month_payment - self.monthly_interest_rate * self.amount), 1 + self.monthly_interest_rate
+        )
         return math.ceil(n)
 
     def loan_principal_annuity(self, month_payment) -> float:
+        """
+        Calculate the loan principal amount for an annuity payment.
+        :param month_payment: your payment for 1 month
+        :return: amount of credit after finish repayment
+        """
         amount = month_payment / (
-                (self.monthly_interest_rate * (1 + self.monthly_interest_rate) ** self.month) / (
-                (1 + self.monthly_interest_rate) ** self.month - 1))
+            (self.monthly_interest_rate * (1 + self.monthly_interest_rate) ** self.month)
+            / ((1 + self.monthly_interest_rate) ** self.month - 1)
+        )
         return amount
 
     def payment_annuity_pure(self) -> float:
-        a_payment = self.amount * (
-                (self.monthly_interest_rate * (1 + self.monthly_interest_rate) ** self.month) / (
-                (1 + self.monthly_interest_rate) ** self.month - 1))
-        return a_payment  # не возвращаем self, т к diff всегда разный
+        """
+        Calculate the exact monthly annuity payment.
+
+        Returns:
+            float: The monthly annuity payment.
+        """
+        return self.amount * (
+            (self.monthly_interest_rate * (1 + self.monthly_interest_rate) ** self.month)
+            / ((1 + self.monthly_interest_rate) ** self.month - 1)
+        )
 
     def payment_annuity_ceil(self) -> int:
+        """
+        Calculate the monthly annuity payment rounded up to the nearest integer.
+
+        Returns:
+            int: The rounded annuity payment.
+        """
         return math.ceil(self.payment_annuity_pure())
 
     def payment_differentiated_pure(self, m: int) -> float:
@@ -69,7 +96,8 @@ class Loan:
         # every month new
         # m => 1
         diff_payment = self.amount / self.month + self.monthly_interest_rate * (
-                self.amount - ((self.amount * (m - 1)) / self.month))
+            self.amount - ((self.amount * (m - 1)) / self.month)
+        )
         return diff_payment
 
     def payment_differentiated_ceil(self, stay_pay: float) -> float:
@@ -86,11 +114,14 @@ class Loan:
         return diff_payment
 
     def calculate_payment_ceil(self) -> list:
+        """
+        Calculating all payments ceil
+        :return: payments
+        """
         payment: list = []
 
         if self.loan_type[0] == "A":
             payment = [self.payment_annuity_ceil()] * self.month
-            return payment
 
         else:
             stay_pay = self.amount
@@ -99,16 +130,21 @@ class Loan:
                 ceil_diff = math.ceil(diff)
                 stay_pay -= (ceil_diff - diff) + self.amount / self.month
                 payment.append(ceil_diff)
-            return payment
+
+        return payment
 
     def calculate_payment_pure(self) -> list:
+        """
+        Calculating all payments
+        :return: payments
+        """
         payment: list = []
         # accuracy of 2 decimal places
         if self.loan_type[0] == "A":
             payment = [round(self.payment_annuity_pure(), 2)] * self.month
-            return payment
 
         else:
             for month_now in range(1, self.month + 1):
                 payment.append(round(self.payment_differentiated_pure(month_now), 2))
-            return payment
+
+        return payment
