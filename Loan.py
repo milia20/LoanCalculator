@@ -2,8 +2,16 @@ import math
 
 
 class Loan:
-    def __init__(self, amount: int = 0, percent: float = 0.0, month: int = 0,
-                 loan_type: str = "Annuity") -> None:
+    """
+    A class to represent a loan and perform calculations for annuity and differentiated payments.
+
+    Attributes:
+        amount (int): The principal loan amount.
+        annual_percent_rate (float): The annual interest rate as a percentage.
+        month (int): The loan term in months.
+        loan_type (str): The type of loan ("Annuity" or "Differentiated").
+    """
+    def __init__(self, amount: int = 0, percent: float = 0.0, month: int = 0, loan_type: str = "Annuity") -> None:
         self.amount: int = amount
         self.annual_percent_rate: float = percent
         self.annual_interest_rate: float = self.annual_percent_rate / 100
@@ -11,12 +19,14 @@ class Loan:
         self.month: int = month
         self.loan_type: str = loan_type
 
-    def set_interest_rate(self, percent):
-        self.annual_percent_rate: float = percent
-        self.annual_interest_rate: float = self.annual_percent_rate / 100
-        self.monthly_interest_rate: float = self.annual_interest_rate / 12
+    def set_interest_rate(self, percent: float) -> None:
+        """Set a new annual interest rate."""
+        self.annual_percent_rate = percent
+        self.annual_interest_rate = self.annual_percent_rate / 100
+        self.monthly_interest_rate = self.annual_interest_rate / 12
 
-    def set_loan_type(self, loan_type):
+    def set_loan_type(self, loan_type: str) -> None:
+        """Set the type of loan."""
         self.loan_type = loan_type
 
     def set_loan(self, loan_type):
