@@ -1,103 +1,120 @@
-from tkinter import *
+from tkinter import BOTH, LEFT, Button, Entry, Frame, Label, Radiobutton, StringVar, Tk
 
 import matplotlib.backends.backend_tkagg
 import matplotlib.pyplot as plt
 
 from Loan import Loan
 
-__author__ = 'Ilya'
+__author__ = "Ilya"
 
 
-def make_graph(my_payment):
-    ax.clear()
-    print(my_payment)
-    ax.bar([_ for _ in range(1, len(my_payment) + 1)], my_payment)
-    ax.set_xlabel("Месяца")
-    ax.set_ylabel("Выплата руб")
-    ax.set_title("График выплат")
-    for p in ax.patches:
-        ax.annotate(format(p.get_height(), '.2f'),
-                    (p.get_x() + p.get_width() / 2., p.get_height()),
-                    ha='center', va='center',
-                    xytext=(0, -12),
-                    textcoords='offset points')
+class LoanCalculatorApp:
+    def __init__(self, root):
+        self.loan = Loan()
+        self.root = root
+        self.root.title("Loan Calculator")
+        self.root.geometry("800x700")
+        self.root.configure(bg="#f7f7f7")
 
-    graph.draw()
+        self.init_ui()
+
+    def init_ui(self):
+        # Frames
+        self.amount_frame = Frame(self.root, bg="#f7f7f7")
+        self.rate_frame = Frame(self.root, bg="#f7f7f7")
+        self.term_frame = Frame(self.root, bg="#f7f7f7")
+        self.type_frame = Frame(self.root, bg="#f7f7f7")
+        self.result_frame = Frame(self.root, bg="#f7f7f7")
+
+        # Widgets
+        Label(self.amount_frame, text="Loan Amount:", bg="#f7f7f7", font=("Arial", 12)).pack(side=LEFT, padx=10)
+        self.amount_entry = Entry(self.amount_frame, font=("Arial", 12), width=20)
+        self.amount_entry.pack(side=LEFT)
+
+        Label(self.rate_frame, text="Interest Rate (%):", bg="#f7f7f7", font=("Arial", 12)).pack(side=LEFT, padx=10)
+        self.rate_entry = Entry(self.rate_frame, font=("Arial", 12), width=20)
+        self.rate_entry.pack(side=LEFT)
+
+        Label(self.term_frame, text="Loan Term (Months):", bg="#f7f7f7", font=("Arial", 12)).pack(side=LEFT, padx=10)
+        self.term_entry = Entry(self.term_frame, font=("Arial", 12), width=20)
+        self.term_entry.pack(side=LEFT)
+
+        self.loan_type = StringVar(value="Annuity")
+        Radiobutton(
+            self.type_frame, text="Annuity", variable=self.loan_type, value="Annuity", bg="#f7f7f7", font=("Arial", 12)
+        ).pack(side=LEFT, padx=10)
+        Radiobutton(
+            self.type_frame,
+            text="Differentiated",
+            variable=self.loan_type,
+            value="Differentiated",
+            bg="#f7f7f7",
+            font=("Arial", 12),
+        ).pack(side=LEFT, padx=10)
+
+        self.calculate_button = Button(
+            self.root,
+            text="Calculate",
+            font=("Arial", 14),
+            bg="#0078d7",
+            fg="white",
+            width=20,
+            command=self.calculate_loan,
+        )
+        self.calculate_button.pack(pady=20)
+
+        self.result_label = Label(self.result_frame, text="", bg="#f7f7f7", font=("Arial", 12))
+        self.result_label.pack()
+
+        self.graph_frame = Frame(self.root, bg="#f7f7f7")
+        self.fig, self.ax = plt.subplots()
+        self.canvas = matplotlib.backends.backend_tkagg.FigureCanvasTkAgg(self.fig, master=self.graph_frame)
+
+        # Layout
+        self.amount_frame.pack(pady=10)
+        self.rate_frame.pack(pady=10)
+        self.term_frame.pack(pady=10)
+        self.type_frame.pack(pady=10)
+        self.result_frame.pack(pady=20)
+        self.graph_frame.pack(fill=BOTH, expand=True)
+        self.canvas.get_tk_widget().pack(fill=BOTH, expand=True)
+
+    def calculate_loan(self):
+        try:
+            amount = float(self.amount_entry.get())
+            rate = float(self.rate_entry.get())
+            term = int(self.term_entry.get())
+            loan_type = self.loan_type.get()
+
+            self.loan = Loan(amount, rate, term, loan_type)
+            payment_schedule = self.loan.generate_payment_schedule()
+            overpayment = self.loan.overpayment([p[1] for p in payment_schedule])
+
+            self.result_label.config(text=f"Total Overpayment: {overpayment:.2f} \u20BD")
+            self.display_graph(payment_schedule)
+
+        except ValueError:
+            self.result_label.config(text="Invalid input! Please enter numeric values.")
+
+    def display_graph(self, payment_schedule):
+        """
+        Display the payment schedule graph.
+        """
+        self.ax.clear()
+        months, payments = zip(*payment_schedule)
+        self.ax.bar(months, payments, color="#0078d7")
+        self.ax.set_title("Payment Schedule", fontsize=14, color="#333333")
+        self.ax.set_xlabel("Month", fontsize=12, color="#333333")
+        self.ax.set_ylabel("Payment (\u20BD)", fontsize=12, color="#333333")
+        self.ax.tick_params(colors="#333333")
+
+        for idx, value in enumerate(payments):
+            self.ax.text(idx + 1, value + 10, f"{value:.2f}", ha="center", fontsize=9, color="#333333")
+
+        self.canvas.draw()
 
 
-def calculate_result(my_loan):
-    my_loan.set_interest_rate(int(text_interest_rate.get()))
-    my_loan.month = int(text_mount.get())
-    my_loan.amount = int(text_amount.get())
-    if loan_bool.get():
-        my_loan.loan_type = 'Annuity'
-    else:
-        my_loan.loan_type = 'Differentiated'
-
-    pay = my_loan.calculate_payment_pure()
-    over = my_loan.overpayment(pay)
-    overpay.set(f"Переплата {over} р")
-    make_graph(pay)
-
-
-user_loan = Loan(0, 0, 0, "Annuity")
-
-# Window settings
-window = Tk()
-window.title("Loan calculator")
-# window.resizable(width=False, height=False)
-window.geometry("800x700")
-
-amount_frame = Frame(window)
-interest_rate_frame = Frame(window)
-mount_frame = Frame(window)
-loan_type_frame = Frame(window)
-
-# Event
-btn = Button(window, width=10, height=2, text="Рассчитать", bg="white", fg="black",
-             command=lambda: calculate_result(user_loan))
-fig, ax = plt.subplots()
-
-graph = matplotlib.backends.backend_tkagg.FigureCanvasTkAgg(fig, master=window)
-
-amount = Label(amount_frame, text="Сумма долга")
-interest_rate = Label(interest_rate_frame, text="%")
-mount = Label(mount_frame, text="Месяца")
-overpay = StringVar()
-overpay.set("Переплата 0 р")
-payment = Label(window, textvariable=overpay)
-
-text_amount = Entry(amount_frame)
-text_interest_rate = Entry(interest_rate_frame)
-text_mount = Entry(mount_frame)
-
-loan_bool = BooleanVar()
-loan_bool.set(True)
-Annuity_btn = Radiobutton(loan_type_frame, text='Annuity', variable=loan_bool, value=True)
-Differentiated_btn = Radiobutton(loan_type_frame, text='Differentiated', variable=loan_bool,
-                                 value=False)
-# Packer
-
-graph.get_tk_widget().pack(fill=BOTH, expand=True)
-payment.pack()
-
-amount_frame.pack()
-interest_rate_frame.pack()
-mount_frame.pack()
-loan_type_frame.pack()
-
-amount.pack(side=LEFT, padx=39)
-text_amount.pack(side=LEFT, padx=39)
-
-interest_rate.pack(side=LEFT, padx=70)
-text_interest_rate.pack(side=LEFT, padx=70)
-
-mount.pack(side=LEFT, padx=54)
-text_mount.pack(side=RIGHT, padx=54)
-
-Annuity_btn.pack(side=LEFT)
-Differentiated_btn.pack(side=LEFT)
-
-btn.pack()
-
-window.mainloop()
+if __name__ == "__main__":
+    window = Tk()
+    app = LoanCalculatorApp(window)
+    window.mainloop()

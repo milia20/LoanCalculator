@@ -6,14 +6,14 @@ class Loan:
     A class to represent a loan and perform calculations for annuity and differentiated payments.
 
     Attributes:
-        amount (int): The principal loan amount.
+        amount (float): The principal loan amount.
         annual_percent_rate (float): The annual interest rate as a percentage.
         month (int): The loan term in months.
         loan_type (str): The type of loan ("Annuity" or "Differentiated").
     """
 
-    def __init__(self, amount: int = 0, percent: float = 0.0, month: int = 0, loan_type: str = "Annuity") -> None:
-        self.amount: int = amount
+    def __init__(self, amount: float = 0, percent: float = 0.0, month: int = 0, loan_type: str = "Annuity") -> None:
+        self.amount: float = amount
         self.annual_percent_rate: float = percent
         self.annual_interest_rate: float = self.annual_percent_rate / 100
         self.monthly_interest_rate: float = self.annual_interest_rate / 12
@@ -148,3 +148,72 @@ class Loan:
                 payment.append(round(self.payment_differentiated_pure(month_now), 2))
 
         return payment
+
+    def payment_differentiated(self, month: int) -> float:
+        """
+        Calculate the monthly payment for a given month in a differentiated loan.
+
+        Args:
+            month (int): The month number (1-based index).
+
+        Returns:
+            float: The monthly payment for the given month.
+        """
+        principal_payment = self.amount / self.month
+        interest_payment = self.monthly_interest_rate * (self.amount - (month - 1) * principal_payment)
+        return round(principal_payment + interest_payment, 2)
+
+    def calculate_total_payment(self) -> float:
+        """
+        Calculate the total payment for the loan.
+
+        Returns:
+            float: The total payment over the loan term.
+        """
+        if self.loan_type.lower() == "annuity":
+            return round(self.payment_annuity_pure() * self.month, 2)
+        elif self.loan_type.lower() == "differentiated":
+            return round(sum(self.payment_differentiated(m) for m in range(1, self.month + 1)), 2)
+        else:
+            raise ValueError("Unsupported loan type.")
+
+    def generate_payment_schedule(self) -> list:
+        """
+        Generate a detailed payment schedule for the loan.
+
+        Returns:
+            list: A list of tuples, each containing (month, payment amount).
+        """
+        if self.loan_type.lower() == "annuity":
+            payment = round(self.payment_annuity_pure(), 2)
+            return [(m, payment) for m in range(1, self.month + 1)]
+        elif self.loan_type.lower() == "differentiated":
+            return [(m, self.payment_differentiated(m)) for m in range(1, self.month + 1)]
+        else:
+            raise ValueError("Unsupported loan type.")
+
+    def calculate_remaining_balance(self, after_month: int) -> float:
+        """
+        Calculate the remaining balance after a certain number of months.
+
+        Args:
+            after_month (int): The number of months after which to calculate the balance.
+
+        Returns:
+            float: The remaining loan balance.
+        """
+        if self.loan_type.lower() == "annuity":
+            payment = self.payment_annuity_pure()
+            balance = self.amount
+            for _ in range(after_month):
+                interest = balance * self.monthly_interest_rate
+                principal = payment - interest
+                balance -= principal
+            return round(balance, 2)
+        elif self.loan_type.lower() == "differentiated":
+            balance = self.amount
+            for _ in range(1, after_month + 1):
+                balance -= self.amount / self.month
+            return round(balance, 2)
+        else:
+            raise ValueError("Unsupported loan type.")
